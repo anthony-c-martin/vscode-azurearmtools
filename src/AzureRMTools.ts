@@ -219,10 +219,12 @@ export class AzureRMTools {
         return file instanceof DeploymentTemplate ? file : undefined;
     }
 
+    /*
     private getDeploymentParameters(documentOrUri: vscode.TextDocument | vscode.Uri): DeploymentParameters | undefined {
         const file = this.getDeploymentDoc(documentOrUri);
         return file instanceof DeploymentParameters ? file : undefined;
     }
+    */
 
     // tslint:disable-next-line:no-suspicious-comment
     // TODO: refactor
@@ -243,7 +245,6 @@ export class AzureRMTools {
             let treatAsDeploymentTemplate = false;
             let treatAsDeploymentParameters = false;
             const documentUri = document.uri;
-            const documentPath: string = documentUri.fsPath;
 
             if (document.languageId === armTemplateLanguageId) {
                 // Lang ID is set to arm-template, whether auto or manual, respect the setting
@@ -261,7 +262,7 @@ export class AzureRMTools {
             let shouldParseFile = treatAsDeploymentTemplate || mightBeDeploymentTemplate(document);
             if (shouldParseFile) {
                 // Do a full parse
-                let deploymentTemplate: DeploymentTemplate = new DeploymentTemplate(document.getText(), documentPath);
+                let deploymentTemplate: DeploymentTemplate = new DeploymentTemplate(document.getText(), documentUri);
                 if (deploymentTemplate.hasArmSchemaUri()) {
                     treatAsDeploymentTemplate = true;
                 }
@@ -307,7 +308,7 @@ export class AzureRMTools {
                 let shouldParseParameterFile = treatAsDeploymentTemplate || mightBeDeploymentParameters(document);
                 if (shouldParseParameterFile) {
                     // Do a full parse
-                    let deploymentParameters: DeploymentParameters = new DeploymentParameters(document.getText(), documentPath);
+                    let deploymentParameters: DeploymentParameters = new DeploymentParameters(document.getText(), document.uri);
                     if (deploymentParameters.hasParametersUri()) {
                         treatAsDeploymentParameters = true;
                     }
@@ -547,7 +548,7 @@ export class AzureRMTools {
         const editor = await vscode.window.showTextDocument(uri);
 
         // The document might have changed since we asked, so find the $schema again
-        const currentTemplate = new DeploymentTemplate(editor.document.getText(), `current ${deploymentTemplate.documentId}`);
+        const currentTemplate = new DeploymentTemplate(editor.document.getText(), editor.document.uri);
         const currentSchemaValue: Json.StringValue | undefined = currentTemplate.schemaValue;
         if (currentSchemaValue && currentSchemaValue.unquotedValue === previousSchema) {
             const range = getVSCodeRangeFromSpan(currentTemplate, currentSchemaValue.unquotedSpan);
@@ -859,7 +860,7 @@ export class AzureRMTools {
                 if (!template) {
                     // Nope, have to read it from disk asdf error handling
                     const contents = (await fse.readFile(templateUri.fsPath, { encoding: 'utf8' })).toString();
-                    template = new DeploymentTemplate(contents, templateUri.toString());
+                    template = new DeploymentTemplate(contents, templateUri);
                 }
             }
 
@@ -868,34 +869,8 @@ export class AzureRMTools {
                 position.character,
                 template);
         } else {
-            assert(!doc);
-            return undefined;
+            assert.fail("Unexpected doc type");
         }
-    }
-
-    private async getDeploymentTemplatePositionContext(document: vscode.TextDocument, position: vscode.Position): Promise<DocumentPositionContext | undefined> {
-        const deploymentParameters = this.getDeploymentParameters(document);
-        if (!deploymentParameters) {
-            return undefined;
-        }
-
-        // Find the associated template file, if any
-        let template: DeploymentTemplate | undefined;
-        const templateUri: vscode.Uri | undefined = this._mapping.getTemplateFile(document.uri);
-        if (templateUri) {
-            // Is it already opened?
-            template = this.getDeploymentTemplate(templateUri);
-            if (!template) {
-                // Nope, have to read it from disk asdf error handling
-                const contents = (await fse.readFile(templateUri.fsPath, { encoding: 'utf8' })).toString();
-                template = new DeploymentTemplate(contents, templateUri.toString());
-            }
-        }
-
-        return deploymentParameters.getContextFromDocumentLineAndColumnIndexes(
-            position.line,
-            position.character,
-            template);
     }
 
     private getDocTypeForTelemetry(doc: DeploymentDoc): string {
@@ -925,8 +900,8 @@ export class AzureRMTools {
                     properties.definitionType = refInfo.definition.definitionKind;
 
                     return new vscode.Location(
-                        vscode.Uri.parse(pc.document.documentId),
-                        getVSCodeRangeFromSpan(pc.document, refInfo.definition.nameValue.span)
+                        refInfo.definitionDoc.documentId,
+                        getVSCodeRangeFromSpan(refInfo.definitionDoc, refInfo.definition.nameValue.span)
                     );
                 }
 
@@ -940,7 +915,7 @@ export class AzureRMTools {
         if (deploymentTemplate) {
             return callWithTelemetryAndErrorHandlingSync('Find References', (actionContext: IActionContext): vscode.Location[] => {
                 const results: vscode.Location[] = [];
-                const locationUri: vscode.Uri = vscode.Uri.parse(deploymentTemplate.documentId);
+                const locationUri: vscode.Uri = deploymentTemplate.documentId;
                 const positionContext: PositionContext = deploymentTemplate.getContextFromDocumentLineAndColumnIndexes(position.line, position.character);
 
                 const references: ReferenceList | undefined = positionContext.getReferences();
@@ -1024,7 +999,7 @@ export class AzureRMTools {
                     // the user is contained in double quotes.  Remove those.
                     newName = newName.replace(/^"(.*)"$/, '$1');
 
-                    const documentUri: vscode.Uri = vscode.Uri.parse(deploymentTemplate.documentId);
+                    const documentUri: vscode.Uri = deploymentTemplate.documentId;
 
                     for (const referenceSpan of referenceList.spans) {
                         const referenceRange: vscode.Range = getVSCodeRangeFromSpan(deploymentTemplate, referenceSpan);

@@ -57,11 +57,15 @@ export class ParametersPositionContext extends DocumentPositionContext {
         return <DeploymentParameters>super.document;
     }
 
-    /**
+    /** asdf test
      * If this position is inside an expression, inside a reference to an interesting function/parameter/etc, then
      * return an object with information about this reference and the corresponding definition
      */
     public getReferenceSiteInfo(): IReferenceSite | undefined {
+        if (!this._associatedTemplate) {
+            return undefined;
+        }
+
         for (let paramValue of this.document.parameterValues) {
             // Are we inside the name of a parameter?
             if (paramValue.nameValue.span.contains(this.documentCharacterIndex, language.Contains.extended)) {
@@ -69,8 +73,9 @@ export class ParametersPositionContext extends DocumentPositionContext {
                 const paramDef = this._associatedTemplate?.topLevelScope.getParameterDefinition(paramValue.nameValue.unquotedValue);
                 if (paramDef) {
                     return {
+                        referenceSpan: paramValue.nameValue.span,
                         definition: paramDef,
-                        referenceSpan: paramValue.nameValue.span
+                        definitionDoc: this._associatedTemplate
                     };
                 }
 
@@ -82,12 +87,14 @@ export class ParametersPositionContext extends DocumentPositionContext {
     }
 
     // Returns undefined if references are not supported at this location.
-    // Returns empty list if supported but none found
+    // Returns empty list if supported but none found asdf test
     public getReferences(): ReferenceList | undefined {
         const refInfo = this.getReferenceSiteInfo();
         if (refInfo) {
             return this.document.findReferences(refInfo.definition);
         }
+
+        return undefined;
     }
 
     public getCompletionItems(): Completion.Item[] {
