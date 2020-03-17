@@ -75,7 +75,7 @@ export class PositionContext extends DocumentPositionContext {
     }
 
     public get document(): DeploymentTemplate {
-        return <DeploymentTemplate>this._document;
+        return <DeploymentTemplate>super.document;
     }
 
     /**
@@ -165,9 +165,6 @@ export class PositionContext extends DocumentPositionContext {
         return undefined;
     }
 
-    /**
-     * Get completion items for our position in the document
-     */
     public getCompletionItems(): Completion.Item[] {
         const tleInfo = this.tleInfo;
         if (!tleInfo) {

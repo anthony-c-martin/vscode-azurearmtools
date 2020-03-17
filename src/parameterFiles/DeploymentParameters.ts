@@ -64,6 +64,12 @@ export class DeploymentParameters extends DeploymentDoc {
     }
 
     public findReferences(definition: INamedDefinition): ReferenceList {
-        return new ReferenceList(definition.definitionKind);
+        const results: ReferenceList = new ReferenceList(definition.definitionKind);
+
+        // The only reference possible is the definition itself (from the template file)
+        if (definition.nameValue) {
+            results.add(definition.nameValue.unquotedSpan);
+        }
+        return results;
     }
 }

@@ -8,6 +8,7 @@ import { DeploymentTemplate } from "../DeploymentTemplate";
 import * as language from "../Language";
 import { createParameterFromTemplateParameter } from "../parameterFileGeneration";
 import { IReferenceSite } from "../PositionContext";
+import { ReferenceList } from "../ReferenceList";
 import { DeploymentParameters } from "./DeploymentParameters";
 import { DocumentPositionContext } from "./DocumentPositionContext";
 
@@ -53,7 +54,7 @@ export class ParametersPositionContext extends DocumentPositionContext {
     }
 
     public get document(): DeploymentParameters {
-        return <DeploymentParameters>this._document;
+        return <DeploymentParameters>super.document;
     }
 
     /**
@@ -61,14 +62,34 @@ export class ParametersPositionContext extends DocumentPositionContext {
      * return an object with information about this reference and the corresponding definition
      */
     public getReferenceSiteInfo(): IReferenceSite | undefined {
-        // tslint:disable-next-line:no-suspicious-comment
-        // TODO
+        for (let paramValue of this.document.parameterValues) {
+            // Are we inside the name of a parameter?
+            if (paramValue.nameValue.span.contains(this.documentCharacterIndex, language.Contains.extended)) {
+                // Does it have an associated parameter definition in the template?
+                const paramDef = this._associatedTemplate?.topLevelScope.getParameterDefinition(paramValue.nameValue.unquotedValue);
+                if (paramDef) {
+                    return {
+                        definition: paramDef,
+                        referenceSpan: paramValue.nameValue.span
+                    };
+                }
+
+                break;
+            }
+        }
+
         return undefined;
     }
 
-    /**
-     * Get completion items for our position in the document
-     */
+    // Returns undefined if references are not supported at this location.
+    // Returns empty list if supported but none found
+    public getReferences(): ReferenceList | undefined {
+        const refInfo = this.getReferenceSiteInfo();
+        if (refInfo) {
+            return this.document.findReferences(refInfo.definition);
+        }
+    }
+
     public getCompletionItems(): Completion.Item[] {
         let completions: Completion.Item[] = [];
 
