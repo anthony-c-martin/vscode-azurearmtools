@@ -216,7 +216,8 @@ export class ParametersPositionContext extends DocumentPositionContext {
         return true;
     }
 
-    // CONSIDER: The concept of a single location isn't used for this function
+    // CONSIDER: The concept of the document location location isn't applicable to this function because it requires
+    //   a range of effect
     public async getCodeActions(range: Range | Selection, context: CodeActionContext): Promise<(Command | CodeAction)[]> {
         const actions: (Command | CodeAction)[] = [];
         const parametersProperty = this.document.parametersProperty;
