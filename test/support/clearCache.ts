@@ -16,9 +16,8 @@ const cacheFolder = isWin32
     : `${homedir}/.local/share/Microsoft/ARMLanguageServer/Schemas/JSON`;
 
 export async function clearCache(): Promise<void> {
+    await displayCacheStatus();
     if (fse.pathExistsSync(cacheFolder)) {
-        console.log(`  Cache contents:`);
-        console.log((await fse.readdir(cacheFolder)).join(', '));
         try {
             // tslint:disable-next-line:typedef
             await new Promise((resolve, reject) => {
@@ -36,23 +35,27 @@ export async function clearCache(): Promise<void> {
 
             if (fse.pathExistsSync(cacheFolder)) {
                 console.error(`...Cache folder still exists!`);
+                await displayCacheStatus();
             } else {
                 console.log(`...Cache folder successfully deleted`);
+                await displayCacheStatus();
             }
         } catch (error) {
             console.log("Could not clear cache!");
             console.error(parseError(error).message);
+            await displayCacheStatus();
         }
     } else {
-        console.log(`Cache folder does not exist`);
+        console.log(`...Cache folder does not exist, no need to clear`);
     }
 }
 
 export async function displayCacheStatus(): Promise<void> {
+    console.log(`Inspecting cache...`);
     if (fse.pathExistsSync(cacheFolder)) {
         console.log(`  Cache contents:`);
         console.log((await fse.readdir(cacheFolder)).join(', '));
     } else {
-        console.log(`Cache folder does not exist: ${cacheFolder}`);
+        console.log(`  Cache folder does not exist: ${cacheFolder}`);
     }
 }
