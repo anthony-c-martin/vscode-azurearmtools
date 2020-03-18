@@ -6,6 +6,7 @@
 import * as mocha from 'mocha';
 import * as vscode from 'vscode';
 import { configKeys, configPrefix, ext, languageId } from "../extension.bundle";
+import { clearCache } from './support/clearCache';
 import { delay } from "./support/delay";
 import { useTestFunctionMetadata } from "./TestData";
 
@@ -18,6 +19,8 @@ let previousSettings = {
 
 // Runs before all tests
 suiteSetup(async function (this: mocha.IHookCallbackContext): Promise<void> {
+
+    await clearCache();
 
     // For tests, set up dotnet install path to something unusual to simulate installing with unusual usernames
     process.env.ARM_DOTNET_INSTALL_FOLDER = ".dotnet O'Hare O'Donald";
