@@ -10,11 +10,12 @@ import * as rimraf from 'rimraf';
 import { parseError } from 'vscode-azureextensionui';
 import { isWin32 } from '../../extension.bundle';
 
+const homedir = os.homedir();
+const cacheFolder = isWin32
+    ? `${process.env.LocalAppData}\\Microsoft\\ARMLanguageServer\\Schemas\\JSON`
+    : `${homedir}/.local/share/Microsoft/ARMLanguageServer/Schemas/JSON`;
+
 export async function clearCache(): Promise<void> {
-    const homedir = os.homedir();
-    const cacheFolder = isWin32
-        ? `${process.env.LocalAppData}\\Microsoft\\ARMLanguageServer\\Schemas\\JSON`
-        : `${homedir}/.local/share/Microsoft/ARMLanguageServer/Schemas/JSON`;
     if (fse.pathExistsSync(cacheFolder)) {
         console.log(`  Cache contents:`);
         console.log((await fse.readdir(cacheFolder)).join(', '));
@@ -45,5 +46,13 @@ export async function clearCache(): Promise<void> {
     } else {
         console.log(`Cache folder does not exist`);
     }
+}
 
+export async function displayCacheStatus(): Promise<void> {
+    if (fse.pathExistsSync(cacheFolder)) {
+        console.log(`  Cache contents:`);
+        console.log((await fse.readdir(cacheFolder)).join(', '));
+    } else {
+        console.log(`Cache folder does not exist: ${cacheFolder}`);
+    }
 }

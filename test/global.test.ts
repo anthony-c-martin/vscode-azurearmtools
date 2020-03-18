@@ -6,7 +6,7 @@
 import * as mocha from 'mocha';
 import * as vscode from 'vscode';
 import { configKeys, configPrefix, ext, languageId } from "../extension.bundle";
-import { clearCache } from './support/clearCache';
+import { clearCache, displayCacheStatus } from './support/clearCache';
 import { delay } from "./support/delay";
 import { useTestFunctionMetadata } from "./TestData";
 
@@ -51,6 +51,8 @@ suiteSetup(async function (this: mocha.IHookCallbackContext): Promise<void> {
 // Runs after all tests
 suiteTeardown(async function (this: mocha.IHookCallbackContext): Promise<void> {
     console.log('Done: global.test.ts: suiteTeardown');
+
+    await displayCacheStatus();
 
     console.log('Restoring settings');
     vscode.workspace.getConfiguration(configPrefix).update(configKeys.autoDetectJsonTemplates, previousSettings.autoDetectJsonTemplates, vscode.ConfigurationTarget.Global);
