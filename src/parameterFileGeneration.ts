@@ -116,16 +116,6 @@ export function createParameterFromTemplateParameter(template: DeploymentTemplat
         + `}`;
 }
 
-//asdf
-// export async function addParameterToParameterFile(editor: TextEditor, template: DeploymentTemplate, parameter: IParameterDefinition): Promise<void> {
-//     const parameterText: string = createParameterProperty(template, parameter, defaultIndent);
-//     appendPropertyTextIntoObject(editor, parameterText);
-// }
-
-// function appendPropertyTextIntoObject(editor: TextEditor, text: string, jsonObject: Json.ObjectValue) {
-
-// }
-
 function getDefaultValueFromType(propType: ExpressionType | undefined, indent: number): string {
     const comment = "// TODO: Fill in parameter value";
     const tab = ' '.repeat(indent);

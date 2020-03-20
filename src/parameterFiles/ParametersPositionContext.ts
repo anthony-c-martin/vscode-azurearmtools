@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------------
 
 import { EOL } from "os";
-import { CodeAction, CodeActionContext, CodeActionKind, Command, Range, Selection } from "vscode";
+import { CodeAction, CodeActionContext, CodeActionKind, Command, Range, Selection, TextEditor } from "vscode";
 import { Json } from "../../extension.bundle";
 import * as Completion from "../Completion";
 import { DeploymentTemplate } from "../DeploymentTemplate";
@@ -14,7 +14,7 @@ import * as language from "../Language";
 import { createParameterFromTemplateParameter } from "../parameterFileGeneration";
 import { ReferenceList } from "../ReferenceList";
 import { IReferenceSite } from "../TemplatePositionContext";
-import { getVSCodeRangeFromSpan } from "../util/vscodePosition";
+import { getVSCodePositionFromPosition, getVSCodeRangeFromSpan } from "../util/vscodePosition";
 import { DeploymentParameters } from "./DeploymentParameters";
 import { DocumentPositionContext } from "./DocumentPositionContext";
 
@@ -169,7 +169,7 @@ export class ParametersPositionContext extends DocumentPositionContext {
         }
 
         // Comma before?
-        const commaEdit = this.createEditForAddingCommaBeforeParameter();
+        const commaEdit = this.createEditToAddCommaBeforeDocPosition();
 
         return new Completion.Item(
             label,
@@ -207,7 +207,7 @@ export class ParametersPositionContext extends DocumentPositionContext {
         return false;
     }
 
-    private createEditForAddingCommaBeforeParameter(): { insertText: string; span: language.Span } | undefined {
+    private createEditToAddCommaBeforeDocPosition(): { insertText: string; span: language.Span } | undefined {
         // Are there are any parameters before the one being inserted?
         const newParamIndex = this.document.parameterValues
             .filter(
@@ -332,4 +332,41 @@ export class ParametersPositionContext extends DocumentPositionContext {
         const spanAsRange = getVSCodeRangeFromSpan(this.document, span);
         return !!range.intersection(spanAsRange);
     }
+
+    // asdf where does this belong?
+    public static async addMissingParameters(
+        editor: TextEditor,
+        params: DeploymentParameters,
+        template: DeploymentTemplate,
+        onlyRequiredParameters: boolean
+    ): Promise<void> {
+        // Find the location to insert new stuff in the parameters section
+        if (params.parametersObjectValue) {
+            // Where insert?
+            const endIndexOfParameters = params.parametersObjectValue.span.endIndex;
+            const insertPos = params.getDocumentPosition(endIndexOfParameters);
+            const pc = ParametersPositionContext.fromDocumentCharacterIndex(params, endIndexOfParameters, template);
+
+            const missingParams: IParameterDefinition[] = pc.getMissingParameters();
+            let paramsAsText: string[] = [];
+            for (let param of missingParams) {
+                const paramText = createParameterFromTemplateParameter(template, param);
+                paramsAsText.push(paramText);
+            }
+
+            const newText = paramsAsText.join(`,${EOL}`);
+            const commaEdit = pc.createEditToAddCommaBeforeDocPosition();
+            await editor.edit(editBuilder => {
+                editBuilder.insert(getVSCodePositionFromPosition(insertPos), newText);
+                if (commaEdit) {
+                    editBuilder.replace(
+                        getVSCodeRangeFromSpan(params, commaEdit.span),
+                        commaEdit.insertText);
+                }
+            });
+        } else {
+            // asdf no params section
+        }
+    }
+
 }
