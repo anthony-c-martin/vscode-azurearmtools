@@ -76,8 +76,9 @@ suite("Functional parameter file completions", () => {
                 items = items;
 
                 // Wait for any resolution to be sure the UI is ready
+                const resolutionPromise = getCompletionItemResolutionPromise();
                 await delay(1);
-                let currentItem = await getCompletionItemResolutionPromise();
+                let currentItem = await resolutionPromise;
 
                 // Select the item we want and accept it
                 let tries = 0;
@@ -89,8 +90,11 @@ suite("Functional parameter file completions", () => {
                     if (currentItem.label.startsWith(insertSuggestionPrefix)) {
                         break;
                     }
+
+                    const resolutionPromise2 = getCompletionItemResolutionPromise();
                     await commands.executeCommand('selectNextSuggestion');
-                    currentItem = await getCompletionItemResolutionPromise();
+                    await delay(1);
+                    currentItem = await resolutionPromise2;
                 }
 
                 const documentChangedPromise = getDocumentChangedPromise(paramsDoc.realDocument);
@@ -293,6 +297,30 @@ suite("Functional parameter file completions", () => {
     "parameters": {
         "parameter1": {
             "value": "value"
+        }
+    }
+}`
+        );
+    });
+
+    suite("Completions for parameters in template file", async () => {
+        createCompletionsFunctionalTest(
+            "From required parameter",
+            `{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        !{EOL}
+    }
+}`,
+            templateOneRequiredParam,
+            `"required1"`,
+            `{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "required1": {
+            "value": "" // TODO: Fill in parameter value
         }
     }
 }`
