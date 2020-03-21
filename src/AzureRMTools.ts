@@ -972,30 +972,31 @@ export class AzureRMTools {
         return new DeploymentTemplate(contents, uri);
     }
 
+    //asdf
     // Given a document, get the existing deployment template or parameter that is editing it, or if none, create a
     //   new one by reading the location from disk asdf
-    private async getOrReadDeploymentParameters(parametersUri: vscode.Uri): Promise<DeploymentParameters | undefined> {
-        // Is it already opened?
-        const doc = this.getOpenedDeploymentParameters(parametersUri);
-        if (doc) {
-            return doc;
-        }
+    // private async getOrReadDeploymentParameters(parametersUri: vscode.Uri): Promise<DeploymentParameters | undefined> {
+    //     // Is it already opened?
+    //     const doc = this.getOpenedDeploymentParameters(parametersUri);
+    //     if (doc) {
+    //         return doc;
+    //     }
 
-        // Nope, have to read it from disk asdf error handling
+    //     // Nope, have to read it from disk asdf error handling
 
-        // Read params file contents
-        const contents = (await fse.readFile(parametersUri.fsPath, { encoding: 'utf8' })).toString();
+    //     // Read params file contents
+    //     const contents = (await fse.readFile(parametersUri.fsPath, { encoding: 'utf8' })).toString();
 
-        //asdf
-        // // Get deployment template, if any
-        // const templateUri: vscode.Uri | undefined = this._mapping.getTemplateFile(parametersUri);
-        // let template: DeploymentTemplate | undefined;
-        // if (templateUri) {
-        //     template = await this.getOrReadDeploymentTemplate(templateUri); //asdf error handling
-        // }
+    //     //asdf
+    //     // // Get deployment template, if any
+    //     // const templateUri: vscode.Uri | undefined = this._mapping.getTemplateFile(parametersUri);
+    //     // let template: DeploymentTemplate | undefined;
+    //     // if (templateUri) {
+    //     //     template = await this.getOrReadDeploymentTemplate(templateUri); //asdf error handling
+    //     // }
 
-        return new DeploymentParameters(contents, parametersUri);
-    }
+    //     return new DeploymentParameters(contents, parametersUri);
+    // }
 
     private getDocTypeForTelemetry(doc: DeploymentDoc): string {
         if (doc instanceof DeploymentTemplate) {
