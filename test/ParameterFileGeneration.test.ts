@@ -36,7 +36,7 @@ suite("parameterFileGeneration tests", () => {
             parameterDefinition: Partial<IDeploymentParameterDefinition>,
             expectedContents: string
         ): void {
-            testSinglePropertyWithIndent(testName, 0, parameterDefinition, expectedContents);
+            testSinglePropertyWithIndent(testName, 4, parameterDefinition, expectedContents);
         }
 
         function testSinglePropertyWithIndent(
