@@ -24,7 +24,7 @@ import { DocumentPositionContext } from "./DocumentPositionContext";
  * that can be parsed and analyzed about it from that position.
  */
 export class ParametersPositionContext extends DocumentPositionContext {
-    // asdf pass in function to *get* deployment template
+    // asdf pass in function to *get* deployment template, not the template itself
     private _associatedTemplate: DeploymentTemplate | undefined;
 
     private constructor(deploymentParameters: DeploymentParameters, associatedTemplate: DeploymentTemplate | undefined) {
