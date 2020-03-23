@@ -870,7 +870,7 @@ export class AzureRMTools {
 
     private async onProvideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Hover | undefined> {
         const { doc, associatedDoc } = await this.getDeploymentDocAndAssociatedDoc(document);
-        if (doc) {
+        if (!token.isCancellationRequested && doc) {
             return callWithTelemetryAndErrorHandlingSync('Hover', (actionContext: IActionContext): vscode.Hover | undefined => {
                 actionContext.errorHandling.suppressDisplay = true;
                 const properties = <TelemetryProperties & { hoverType?: string; tleFunctionName: string }>actionContext.telemetry.properties;
@@ -896,7 +896,7 @@ export class AzureRMTools {
             actionContext.errorHandling.suppressDisplay = true;
 
             const pc: DocumentPositionContext | undefined = await this.getDocumentPositionContext(document, position);
-            if (pc) {
+            if (!token.isCancellationRequested && pc) {
                 const items: Completion.Item[] = pc.getCompletionItems();
                 const vsCodeItems = items.map(c => toVsCodeCompletionItem(pc.document, c));
                 ext.completionItemsSpy.getValue().postCompletionItemsResult(pc.document, items, vsCodeItems);
@@ -988,7 +988,7 @@ export class AzureRMTools {
     private async onProvideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Location | undefined> {
         return callWithTelemetryAndErrorHandling('Go To Definition', async (actionContext: IActionContext): Promise<vscode.Location | undefined> => {
             const pc: DocumentPositionContext | undefined = await this.getDocumentPositionContext(document, position);
-            if (pc) {
+            if (!token.isCancellationRequested && pc) {
                 let properties = <TelemetryProperties &
                 {
                     definitionType?: string;
@@ -1052,16 +1052,12 @@ export class AzureRMTools {
     ): Promise<(vscode.Command | vscode.CodeAction)[] | undefined> {
         return await callWithTelemetryAndErrorHandling('Provide code actions', async (actionContext: IActionContext): Promise<(vscode.Command | vscode.CodeAction)[] | undefined> => {
             actionContext.errorHandling.suppressDisplay = true;
-            if (token.isCancellationRequested) {
+            if (token.isCancellationRequested) { //asdf throw
                 return undefined;
             }
 
             const { doc, associatedDoc } = await this.getDeploymentDocAndAssociatedDoc(textDocument);
-            if (token.isCancellationRequested) {
-                return undefined;
-            }
-
-            if (doc) {
+            if (!token.isCancellationRequested && doc) {
                 return await doc.getCodeActions(associatedDoc, range, context);
             }
 
