@@ -1,0 +1,176 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.v2.json#",
+    "apiProfile": "2018-06-01-profile",
+    "import": [
+        "./Microsoft.Compute",
+        "./Micorsoft.Network",
+        "./Microsoft.Storage"
+    ],
+    "defaults": [
+        {
+            "resources.location": "[resourceGroup().location]"
+        }
+    ],
+    "parameters": {
+        "virtualMachineAdminUserName": {
+            "type": "string"
+        },
+        "virtualMachineAdminPassword": {
+            "type": "securestring"
+        },
+        "namePrefix": {
+            "type": "string"
+        },
+        "vmCount": {
+            "type": "int"
+        }
+    },
+    "variables": {
+        "vmSku": "Standard_D2_v3",
+        "location": "[resourceGroup().location]",
+        "dnsPrefix": "[uniqueString(resourceGroup().id)]",
+        "os": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2016-Datacenter"
+        },
+        "allow3389": {
+            "name": "default-allow-3389",
+            "properties": {
+                "priority": 1000,
+                "access": "Allow",
+                "direction": "Inbound",
+                "destinationPortRange": "3389",
+                "protocol": "Tcp",
+                "sourceAddressPrefix": "*",
+                "sourcePortRange": "*",
+                "destinationAddressPrefix": "*"
+            }
+        }
+    },
+    "resources": [
+        {
+            "_id": "$nsg",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "$namePrefix-$[uniqueString($location)]-nsg",
+            "properties": {
+                "securityRules": [
+                    "$allow3389"
+                ]
+            }
+        },
+        {
+            "_id": "$vnet",
+            "name": "$namePrefix-vnet",
+            "type": "Microsoft.Network/virtualNetworks",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "10.0.0.0/16"
+                    ]
+                }
+            }
+        },
+        {
+            "_id": "$subnet",
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "name": "$namePrefix-sub001",
+            "properties": {
+                "addressPrefix": "10.0.0.0/24",
+                "networkSecurityGroup": {
+                    "id": "$nsg.id"
+                }
+            }
+        },
+        {
+            "_id": "$diagstorage",
+            "name": "$namePrefixstorage",
+            "type": "Microsoft.Storage/myStorageAccounts" // this uses my custom module, which has defaults for everything I want in diags
+        },
+        {
+            "_id": "$vm",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "$namePrefixVM-$vmLoop",
+            "copy": {
+                "name": "vmLoop",
+                "count": "$vmCount"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "$vmSku"
+                },
+                "storageProfile": {
+                    "imageReference": "$os",
+                    "osDisk": {
+                        "name": "$namePrefix-$vmLoop",
+                        "managedDisk": {
+                            "storageAccountType": "Premium_LRS"
+                        }
+                    }
+                },
+                "osProfile": {
+                    "computerName": "$vmPrefix-$vmLoop",
+                    "adminUsername": "$adminUsername",
+                    "windowsConfiguration": {
+                        "provisionVMAgent": true
+                    },
+                    "adminPassword": "$adminPassword"
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "$nic[$vmLoop].id"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "$diagStorage.properties.primaryEndpoints.blob" // runtime references come from the _id of the resource via the properties property
+                    }
+                }
+            }
+        },
+        {
+            "_id": "$nic",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "$namePrefix-$nicLoop",
+            "copy": {
+                "name": "nicLoop",
+                "count": "$vmCount"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "$publicIp[$nicLoop].id"
+                            },
+                            "subnet": {
+                                "id": "$subnet.id"
+                            }
+                        }
+                    }
+                ],
+                "enableIPForwarding": false
+            }
+        },
+        {
+            "_id": "$publicIp",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "$namePrefix-$ipLoop",
+            "copy": {
+                "name": "ipLoop",
+                "count": "$vmCount"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Dynamic",
+                "dnsSettings": {
+                    "domainNameLabel": "$dnsPrefix-$ipLoop"
+                }
+            }
+        }
+    ]
+}

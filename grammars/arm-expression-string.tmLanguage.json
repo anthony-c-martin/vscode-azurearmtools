@@ -49,6 +49,78 @@
 		}
 	],
 	"repository": {
+		"interpstring": {
+			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.tle.arm-template"
+				}
+			},
+			"end": "\"",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.tle.arm-template"
+				}
+			},
+			"name": "string.quoted.double.tle.arm-template",
+			"patterns": [
+				{
+					"include": "#interpidentifier"
+				},
+				{
+					"include": "#interpexpression"
+				},
+				{
+					"include": "source.json.arm-template#stringcontent"
+				}
+			]
+		},
+		"interpidentifier": {
+			"name": "meta.embedded.block",
+			"match": "\\$[a-zA-Z][a-zA-Z0-9]*(\\.[a-zA-Z][a-zA-Z0-9]*|\\[[^\\]]+\\]|)*\\b",
+			"captures": {
+				"0": {
+					"patterns": [
+						{
+							"name": "variable.language.variables.tle.arm-template",
+							"match": "\\$[a-zA-Z][a-zA-Z0-9]*\\b"
+						},
+						{
+							"match": "\\.([a-zA-Z][a-zA-Z0-9]*)",
+							"captures": {
+								"1": {
+									"name": "variable.other.object.property.tle.arm-template"
+								}
+							}
+						}
+					]
+				}
+			}
+		},
+		"interpexpression": {
+			"begin": "\\$\\[",
+			"end": "\\]",
+			"beginCaptures": {
+				"0": {
+					"name": "variable.language.variables.tle.arm-template"
+				}
+			},
+			"endCaptures": {
+				"0": {
+					"name": "variable.language.variables.tle.arm-template"
+				}
+			},
+			"name": "meta.embedded.block",
+			"patterns": [
+				{
+					"include": "#expression"
+				},
+				{
+					"name": "invalid.illegal.expected-expression.tle.arm-template",
+					"match": "[^\\s]"
+				}
+			]
+		},
 		"expressionstring": {
 			"name": "meta.expression.tle.arm-template",
 			"begin": "(?x)  \"\\[(?!\\[)  (?= (?:{{escaped-apostrophe}}|{{escaped-json-character}}|[^\"])* ( \\]\"|$ ) )",
@@ -78,6 +150,9 @@
 		},
 		"expression": {
 			"patterns": [
+				{
+					"include": "#interpidentifier"
+				},
 				{
 					"include": "#string"
 				},

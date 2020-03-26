@@ -205,7 +205,7 @@
                     "include": "#number"
                 },
                 {
-                    "include": "#string"
+                    "include": "source.tle.arm-template#interpstring"
                 },
                 {
                     "include": "#array"
